@@ -1,0 +1,6 @@
+flask>=2.0
+python-dotenv>=1.0
+anthropic>=0.39
+openpyxl>=3.1
+pandas>=2.0
+pytest>=7.0

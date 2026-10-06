@@ -1,0 +1,21 @@
+# Secrets and private business config
+.env
+config.json
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Generated / uploaded files
+*.xlsx
+*.xls
+*.csv
+uploads/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultron — QuickBooks Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0D1117;--surface:#161B22;--surface2:#1C2333;--border:#30363D;--accent:#2563EB;--accent2:#1D4ED8;--green:#3FB950;--red:#DC2626;--yellow:#F59E0B;--text:#E6EDF3;--text2:#8B949E;--text3:#6E7681;--radius:10px;--font-size:14px;}
+.light{--bg:#F6F8FA;--surface:#FFFFFF;--surface2:#F0F2F5;--border:#D0D7DE;--text:#1F2328;--text2:#656D76;--text3:#9198A1;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:var(--font-size);height:100vh;display:flex;flex-direction:column;overflow:hidden;transition:background 0.2s,color 0.2s;}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.header-left{display:flex;align-items:center;gap:12px;}
+.logo{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;color:white;}
+.header-title{font-size:15px;font-weight:600;color:var(--text);}
+.header-sub{font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.status-dot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.guided-badge{background:#1D4ED8;color:white;font-size:10px;padding:2px 8px;border-radius:20px;font-family:'IBM Plex Mono',monospace;display:none;}
+.guided-badge.visible{display:inline-block;}
+.icon-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;display:flex;align-items:center;gap:5px;transition:all 0.15s;}
+.icon-btn:hover{border-color:var(--accent);color:var(--text);}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;padding:0 20px;gap:0;}
+.tab{padding:10px 16px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;font-family:'IBM Plex Sans',sans-serif;background:none;border-top:none;border-left:none;border-right:none;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-badge{background:var(--accent);color:white;font-size:9px;padding:1px 5px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:210px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 10px;gap:3px;flex-shrink:0;overflow-y:auto;}
+.sidebar-label{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:0 8px;margin-bottom:4px;margin-top:10px;}
+.sidebar-label:first-of-type{margin-top:0;}
+.quick-btn{background:none;border:none;color:var(--text2);font-size:12px;font-family:'IBM Plex Sans',sans-serif;padding:7px 10px;border-radius:6px;text-align:left;cursor:pointer;transition:all 0.15s;line-height:1.4;width:100%;}
+.quick-btn:hover{background:var(--surface2);color:var(--text);}
+.qb-tag{display:block;font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:1px;}
+.new-chat-btn{background:var(--accent);border:none;color:white;font-size:12px;font-weight:500;font-family:'IBM Plex Sans',sans-serif;padding:8px 12px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background 0.15s;margin-bottom:10px;width:100%;}
+.new-chat-btn:hover{background:var(--accent2);}
+
+/* PANELS */
+.panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.panel.active{display:flex;}
+
+/* CHAT PANEL */
+.messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:0;scroll-behavior:smooth;}
+.messages::-webkit-scrollbar{width:4px;}
+.messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:8px;padding:40px;text-align:center;}
+.welcome-icon{width:52px;height:52px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:6px;}
+.welcome h2{font-size:19px;font-weight:600;color:var(--text);}
+.welcome p{font-size:13px;color:var(--text2);max-width:400px;line-height:1.6;}
+.welcome-chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:14px;max-width:560px;}
+.chip{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:12px;padding:6px 13px;border-radius:20px;cursor:pointer;transition:all 0.15s;font-family:'IBM Plex Sans',sans-serif;}
+.chip:hover{border-color:var(--accent);color:var(--text);}
+.message{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);animation:fadeIn 0.2s ease;position:relative;}
+.message:last-child{border-bottom:none;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.avatar{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;flex-shrink:0;margin-top:1px;}
+.avatar.user{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.avatar.ai{background:var(--accent);color:white;}
+.message-content{flex:1;line-height:1.75;color:var(--text);min-width:0;}
+.message-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.message-role{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;}
+.message-actions{display:flex;gap:4px;opacity:0;transition:opacity 0.15s;}
+.message:hover .message-actions{opacity:1;}
+.msg-btn{background:none;border:1px solid var(--border);color:var(--text3);font-size:10px;padding:2px 7px;border-radius:4px;cursor:pointer;font-family:'IBM Plex Mono',monospace;transition:all 0.15s;}
+.msg-btn:hover{border-color:var(--accent);color:var(--text);}
+.msg-btn.copied{border-color:var(--green);color:var(--green);}
+.message-text p{margin-bottom:8px;}.message-text p:last-child{margin-bottom:0;}
+.message-text code{background:var(--surface2);border:1px solid var(--border);padding:1px 5px;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#79C0FF;}
+.message-text pre{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;overflow-x:auto;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.7;}
+.message-text strong{color:var(--text);font-weight:600;}
+.message-text ul,.message-text ol{padding-left:18px;margin:6px 0;}
+.message-text li{margin-bottom:4px;}
+.message-text h3{font-size:13px;font-weight:600;color:var(--text);margin:12px 0 5px;font-family:'IBM Plex Mono',monospace;}
+.journal-entry{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:12px 14px;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.8;}
+.typing{display:flex;gap:4px;align-items:center;padding:4px 0;}
+.typing span{width:5px;height:5px;background:var(--text3);border-radius:50%;animation:bounce 1.2s infinite;}
+.typing span:nth-child(2){animation-delay:0.2s}.typing span:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.scroll-btn{position:absolute;bottom:80px;right:20px;background:var(--surface);border:1px solid var(--border);color:var(--text2);width:34px;height:34px;border-radius:50%;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:10;font-size:15px;}
+.scroll-btn.visible{display:flex;}
+
+/* INPUT */
+.input-area{padding:12px 20px 16px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0;}
+.input-wrapper{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:flex-end;gap:8px;padding:10px 12px;transition:border-color 0.15s;}
+.input-wrapper:focus-within{border-color:var(--accent);}
+#user-input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:var(--font-size);font-family:'IBM Plex Sans',sans-serif;resize:none;max-height:140px;min-height:20px;line-height:1.6;}
+#user-input::placeholder{color:var(--text3);}
+.send-btn{background:var(--accent);border:none;border-radius:6px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;flex-shrink:0;}
+.send-btn:hover:not(:disabled){background:var(--accent2);}
+.send-btn:disabled{background:var(--surface2);cursor:not-allowed;}
+.send-btn svg{width:13px;height:13px;fill:white;}
+.send-btn:disabled svg{fill:var(--text3);}
+.input-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;}
+.input-hint{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+.char-counter{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+.char-counter.warn{color:var(--yellow);}
+
+/* TOOL PANELS */
+.tool-panel{flex:1;overflow-y:auto;padding:24px;}
+.tool-header{margin-bottom:20px;}
+.tool-title{font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.tool-desc{font-size:13px;color:var(--text2);}
+
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface);}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:var(--surface2);}
+.upload-zone input{display:none;}
+.upload-icon{font-size:36px;margin-bottom:12px;}
+.upload-zone h3{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.upload-zone p{font-size:12px;color:var(--text2);}
+.mode-select{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.mode-btn{padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--text2);font-size:12px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all 0.15s;}
+.mode-btn.active{background:var(--accent);color:white;border-color:var(--accent);}
+
+/* RESULTS */
+.results-box{margin-top:20px;}
+.result-summary{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;display:flex;gap:20px;flex-wrap:wrap;}
+.result-stat{text-align:center;}
+.result-stat-num{font-size:24px;font-weight:600;color:var(--text);font-family:'IBM Plex Mono',monospace;}
+.result-stat-label{font-size:11px;color:var(--text3);margin-top:2px;}
+.result-stat-num.good{color:var(--green);}
+.result-stat-num.bad{color:var(--red);}
+.result-stat-num.warn{color:var(--yellow);}
+.ai-analysis{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:16px;margin-bottom:16px;font-size:13px;line-height:1.7;}
+.ai-analysis h4{font-size:12px;font-family:'IBM Plex Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{background:var(--surface2);padding:8px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;}
+.data-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);}
+.data-table tr:hover td{background:var(--surface2);}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;font-family:'IBM Plex Mono',monospace;font-weight:500;}
+.badge.ok{background:#0F6E5620;color:#3FB950;}
+.badge.error{background:#DC262620;color:#F87171;}
+.badge.warn{background:#F59E0B20;color:#F59E0B;}
+.badge.info{background:#2563EB20;color:#60A5FA;}
+.action-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.action-btn{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;border:none;display:flex;align-items:center;gap:6px;transition:all 0.15s;}
+.action-btn.primary{background:var(--accent);color:white;}
+.action-btn.primary:hover{background:var(--accent2);}
+.action-btn.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.action-btn.secondary:hover{border-color:var(--accent);color:var(--text);}
+.action-btn.success{background:#0F6E56;color:white;}
+.action-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* STOCK CODE PANEL */
+.stockcode-search{display:flex;gap:10px;margin-bottom:20px;}
+.search-input{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:9px 14px;border-radius:8px;font-size:13px;font-family:'IBM Plex Sans',sans-serif;outline:none;}
+.search-input:focus{border-color:var(--accent);}
+.stockcode-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;}
+.stockcode-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;transition:border-color 0.15s;}
+.stockcode-card:hover{border-color:var(--accent);}
+.stockcode-code{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);margin-bottom:4px;}
+.stockcode-desc{font-size:12px;color:var(--text);margin-bottom:6px;line-height:1.4;}
+.stockcode-meta{display:flex;gap:6px;flex-wrap:wrap;}
+
+/* INVENTORY PANEL */
+.inv-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.filter-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--text2);font-size:12px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
+.filter-btn.active{background:var(--accent);color:white;border-color:var(--accent);}
+.inv-table-wrap{overflow-x:auto;}
+.low-row td{background:#DC262610 !important;}
+
+/* SETTINGS MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:100;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:480px;max-width:95vw;max-height:85vh;overflow-y:auto;padding:26px;animation:modalIn 0.2s ease;}
+@keyframes modalIn{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.modal-title{font-size:16px;font-weight:600;color:var(--text);}
+.modal-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.settings-section{margin-bottom:22px;}
+.settings-section-title{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
+.setting-row:last-child{border-bottom:none;}
+.setting-label{font-size:13px;color:var(--text);font-weight:500;}
+.setting-desc{font-size:11px;color:var(--text3);margin-top:2px;}
+.toggle{position:relative;width:38px;height:21px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:21px;cursor:pointer;transition:0.2s;}
+.toggle-slider:before{content:"";position:absolute;width:15px;height:15px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.2s;}
+input:checked+.toggle-slider{background:var(--accent);}
+input:checked+.toggle-slider:before{transform:translateX(17px);}
+.setting-select{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:5px 9px;border-radius:6px;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;}
+.font-control{display:flex;align-items:center;gap:7px;}
+.font-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);width:26px;height:26px;border-radius:5px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.font-btn:hover{border-color:var(--accent);}
+.font-size-display{font-size:12px;color:var(--text2);font-family:'IBM Plex Mono',monospace;min-width:30px;text-align:center;}
+.save-btn{width:100%;padding:9px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;margin-top:6px;}
+.save-btn:hover{background:var(--accent2);}
+.shortcut-hint{font-size:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text3);padding:1px 5px;border-radius:4px;font-family:'IBM Plex Mono',monospace;}
+
+/* CONFIRM */
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:150;}
+.confirm-overlay.open{display:flex;}
+.confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;width:300px;text-align:center;}
+.confirm-box h3{font-size:15px;font-weight:600;margin-bottom:6px;color:var(--text);}
+.confirm-box p{font-size:13px;color:var(--text2);margin-bottom:18px;}
+.confirm-btns{display:flex;gap:8px;justify-content:center;}
+.confirm-btn{padding:7px 18px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;border:none;}
+.confirm-btn.cancel{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.confirm-btn.confirm{background:var(--red);color:white;}
+
+/* TOAST */
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:12px;padding:7px 16px;border-radius:20px;font-family:'IBM Plex Mono',monospace;opacity:0;transition:all 0.25s;pointer-events:none;z-index:200;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* LOADING */
+.loading-overlay{position:absolute;inset:0;background:rgba(13,17,23,0.7);display:none;align-items:center;justify-content:center;z-index:50;border-radius:var(--radius);}
+.loading-overlay.show{display:flex;}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:640px){.sidebar{display:none;}.tabs .tab span{display:none;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">U</div>
+    <div>
+      <div class="header-title">Ultron <span class="guided-badge" id="guided-badge">Guided</span></div>
+      <div class="header-sub" id="header-sub">QuickBooks Enterprise</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-dot"><div class="dot"></div>online</div>
+    <button class="icon-btn" onclick="confirmClearChat()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+      Clear
+    </button>
+    <button class="icon-btn" onclick="openSettings()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('chat')" id="tab-chat">💬 <span>Chat</span></button>
+  <button class="tab" onclick="switchTab('excel')" id="tab-excel">📊 <span>Excel Tools</span></button>
+  <button class="tab" onclick="switchTab('inventory')" id="tab-inventory">📦 <span>Inventory</span></button>
+  <button class="tab" onclick="switchTab('stockcode')" id="tab-stockcode">🏷️ <span>Stock Codes</span></button>
+  <button class="tab" onclick="switchTab('duplicates')" id="tab-duplicates">🔍 <span>Duplicates</span></button>
+  <button class="tab" onclick="switchTab('recon')" id="tab-recon">⚖️ <span>Reconciliation</span></button>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR (chat only) -->
+  <div class="sidebar" id="sidebar">
+    <button class="new-chat-btn" onclick="confirmClearChat()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Chat
+    </button>
+    <div class="sidebar-label">Quick Actions</div>
+    <button class="quick-btn" onclick="sendQuick('Generate a journal entry for: ')">Journal Entry<span class="qb-tag">debit / credit</span></button>
+    <button class="quick-btn" onclick="sendQuick('QB error code or message: ')">Error Resolver<span class="qb-tag">paste error, get fix</span></button>
+    <button class="quick-btn" onclick="sendQuick('Books issue to fix: ')">Book Cleanup<span class="qb-tag">diagnose & fix</span></button>
+    <button class="quick-btn" onclick="sendQuick('Reconciliation discrepancy: ')">Reconciliation<span class="qb-tag">find & fix mismatch</span></button>
+    <div class="sidebar-label">Inventory</div>
+    <button class="quick-btn" onclick="sendQuick('Analyze reorder alerts for these stock levels: ')">Reorder Alerts<span class="qb-tag">what needs ordering</span></button>
+    <button class="quick-btn" onclick="sendQuick('Create a sales order for customer: ')">Sales Order<span class="qb-tag">auto create in QB</span></button>
+    <button class="quick-btn" onclick="switchTab('excel')">Excel → Sales Order<span class="qb-tag">upload & push to QB</span></button>
+    <button class="quick-btn" onclick="switchTab('inventory')">Inventory Dashboard<span class="qb-tag">stock levels & alerts</span></button>
+    <button class="quick-btn" onclick="sendQuick('Export inventory report to Excel for: ')">Export Inventory<span class="qb-tag">to Excel instantly</span></button>
+    <div class="sidebar-label">Stock Codes</div>
+    <button class="quick-btn" onclick="switchTab('stockcode')">Browse Stock Codes<span class="qb-tag">search & view all codes</span></button>
+    <button class="quick-btn" onclick="sendQuick('Export all stock codes to Excel')">Export Stock Codes<span class="qb-tag">full code list to Excel</span></button>
+    <button class="quick-btn" onclick="sendQuick('Update Stock code: ')">Update Stock Code<span class="qb-tag">modify existing code</span></button>
+    <div class="sidebar-label">Duplicates</div>
+    <button class="quick-btn" onclick="switchTab('duplicates')">Find Duplicates<span class="qb-tag">scan & flag instantly</span></button>
+    <button class="quick-btn" onclick="sendQuick('Merge these duplicate records in QB: ')">Merge Duplicates<span class="qb-tag">clean up QB lists</span></button>
+    <div class="sidebar-label">Reconciliation</div>
+    <button class="quick-btn" onclick="switchTab('recon')">Stock Code Reconciliation<span class="qb-tag">vendor vs QB inventory</span></button>
+    <div class="sidebar-label">Reports</div>
+    <button class="quick-btn" onclick="sendQuick('Build and run this custom report: ')">Custom Report<span class="qb-tag">build & run in QB</span></button>
+    <button class="quick-btn" onclick="sendQuick('Period comparison report for: ')">Period Compare<span class="qb-tag">any two periods</span></button>
+    <button class="quick-btn" onclick="sendQuick('Export this report to Excel: ')">Export Report<span class="qb-tag">any report to Excel</span></button>
+    <div class="sidebar-label">Compliance</div>
+    <button class="quick-btn" onclick="sendQuick('Generate a year-end close checklist')">Year-End Checklist<span class="qb-tag">1099s, W-2s, 8300</span></button>
+    <button class="quick-btn" onclick="sendQuick('Audit prep — pull all required documentation for: ')">Audit Prep<span class="qb-tag">exact docs to pull</span></button>
+    <button class="quick-btn" onclick="sendQuick('Form 8300 required for this cash transaction: ')">Form 8300<span class="qb-tag">cash over $10k</span></button>
+    <button class="quick-btn" onclick="sendQuick('1099-B reporting requirements for this sale: ')">1099-B Tracker<span class="qb-tag">reportable sales</span></button>
+    </div>
+
+  <!-- CHAT PANEL -->
+  <div class="panel active" id="panel-chat" style="position:relative;">
+    <div class="messages" id="messages" onscroll="handleScroll()">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">⚡</div>
+        <h2>Ultron</h2>
+        <p>Expert QuickBooks assistant for inventory-based businesses. Upload Excel files, manage inventory, check stock codes, find duplicates, or just ask.</p>
+        <div class="welcome-chips">
+          <button class="chip" onclick="sendQuick('Generate a journal entry for an inventory purchase paid in cash')">Journal entry</button>
+          <button class="chip" onclick="switchTab('excel')">Excel → Sales Order</button>
+          <button class="chip" onclick="sendQuick('Check reorder alerts for low inventory')">Reorder alerts</button>
+          <button class="chip" onclick="sendQuick('A customer paid $15,000 cash — Form 8300 obligations?')">Form 8300</button>
+          <button class="chip" onclick="switchTab('stockcode')">Browse Stock Codes</button>
+          <button class="chip" onclick="switchTab('duplicates')">Find Duplicates</button>
+          <button class="chip" onclick="sendQuick('My AR aging does not match my balance sheet')">AR mismatch</button>
+          <button class="chip" onclick="sendQuick('FIFO costing setup for inventory')">FIFO setup</button>
+          <button class="chip" onclick="sendQuick('Sales tax questions for a sale')">Sales tax</button>
+          <button class="chip" onclick="sendQuick('Year-end close checklist')">Year-end</button>
+        </div>
+      </div>
+    </div>
+    <button class="scroll-btn" id="scroll-btn" onclick="scrollToBottom()">↓</button>
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea id="user-input" placeholder="Ask anything — or use the tabs above to upload files, check inventory, manage stock codes..." rows="1" onkeydown="handleKey(event)" oninput="handleInput(this)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"/></svg>
+        </button>
+      </div>
+      <div class="input-footer">
+        <span class="input-hint">Enter to send · Shift+Enter new line · Alt+S settings</span>
+        <span class="char-counter" id="char-counter"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXCEL TOOLS PANEL -->
+  <div class="panel" id="panel-excel">
+    <div class="tool-panel">
+      <div class="tool-header">
+        <div class="tool-title">Excel Tools</div>
+        <div class="tool-desc">Upload any Excel file — Ultron reads it and takes action immediately</div>
+      </div>
+
+      <div class="mode-select">
+        <button class="mode-btn active" onclick="setMode('sales_order',this)">📋 Sales Order Import</button>
+        <button class="mode-btn" onclick="setMode('stockcode',this)">🏷️ Stock Code Update</button>
+        <button class="mode-btn" onclick="setMode('inventory',this)">📦 Inventory Update</button>
+        <button class="mode-btn" onclick="setMode('duplicates',this)">🔍 Find Duplicates</button>
+      </div>
+
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])">
+        <div class="upload-icon">📂</div>
+        <h3>Drop your Excel file here</h3>
+        <p>or click to browse · .xlsx, .xls, .csv supported</p>
+      </div>
+
+      <div class="results-box" id="excel-results" style="display:none;">
+        <div class="result-summary" id="result-summary"></div>
+        <div class="ai-analysis" id="ai-analysis" style="display:none;">
+          <h4>Ultron Analysis</h4>
+          <div id="ai-analysis-text"></div>
+        </div>
+        <div class="action-bar" id="action-bar"></div>
+        <div class="inv-table-wrap">
+          <table class="data-table" id="result-table">
+            <thead id="result-thead"></thead>
+            <tbody id="result-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVENTORY PANEL -->
+  <div class="panel" id="panel-inventory">
+    <div class="tool-panel">
+      <div class="tool-header">
+        <div class="tool-title">Inventory Dashboard</div>
+        <div class="tool-desc">Upload your inventory export from QB or paste data to analyze stock levels</div>
+      </div>
+      <div class="inv-filters">
+        <button class="filter-btn active" onclick="filterInv('all',this)">All Items</button>
+        <button class="filter-btn" onclick="filterInv('low',this)">Low Stock</button>
+        <span id="inv-cat-filters"></span>
+      </div>
+      <div class="action-bar">
+        <button class="action-btn secondary" onclick="switchTab('excel');setMode('inventory',document.querySelectorAll('.mode-btn')[2])">Upload Inventory Excel</button>
+        <button class="action-btn secondary" id="export-inv-btn" onclick="exportInventory()" disabled>Export to Excel</button>
+      </div>
+      <div class="inv-table-wrap">
+        <table class="data-table" id="inv-table">
+          <thead><tr><th>Stock Code</th><th>Description</th><th>Qty</th><th>Reorder Point</th><th>Location</th><th>Status</th></tr></thead>
+          <tbody id="inv-tbody"><tr><td colspan="6" style="text-align:center;color:var(--text3);padding:40px;">Upload an inventory Excel file to see data here</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- STOCK CODE PANEL -->
+  <div class="panel" id="panel-stockcode">
+    <div class="tool-panel">
+      <div class="tool-header">
+        <div class="tool-title">Stock Code Manager</div>
+        <div class="tool-desc">Search, view, and manage item stock codes</div>
+      </div>
+      <div class="stockcode-search">
+        <input type="text" class="search-input" id="stockcode-search" placeholder="Search by code, description, or category..." oninput="searchStockCode(this.value)">
+        <button class="action-btn secondary" onclick="switchTab('excel');setMode('stockcode',document.querySelectorAll('.mode-btn')[1])">Upload New Codes</button>
+        <button class="action-btn secondary" onclick="exportStockCode()">Export to Excel</button>
+      </div>
+      <div class="stockcode-grid" id="stockcode-grid">
+        <div style="grid-column:1/-1;text-align:center;color:var(--text3);padding:40px;">Upload a Stock Code code Excel file to populate this view</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DUPLICATES PANEL -->
+  <div class="panel" id="panel-duplicates">
+    <div class="tool-panel">
+      <div class="tool-header">
+        <div class="tool-title">Duplicate Checker</div>
+        <div class="tool-desc">Upload any QB export to find duplicate transactions, customers, vendors, or items</div>
+      </div>
+      <div class="action-bar">
+        <button class="action-btn secondary" onclick="switchTab('excel');setMode('duplicates',document.querySelectorAll('.mode-btn')[3])">Upload File to Check</button>
+      </div>
+      <div id="dup-results">
+        <div style="text-align:center;color:var(--text3);padding:40px;">Upload a QB export Excel file to scan for duplicates</div>
+      </div>
+    </div>
+  </div>
+  <!-- RECONCILIATION PANEL -->
+  <div class="panel" id="panel-recon">
+    <div class="tool-panel">
+      <div class="tool-header">
+        <div class="tool-title">Stock Code Reconciliation</div>
+        <div class="tool-desc">Paste your Stock Code master codes on the left and QB inventory on the right — Ultron compares them instantly and flags every discrepancy</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div>
+          <div style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Stock Codes (paste or upload)</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+            <label style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:12px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px;">
+              📂 Upload File
+              <input type="file" accept=".xlsx,.xls,.csv" style="position:absolute;opacity:0;width:1px;height:1px;" onchange="loadReconFile(this,'vendor-data','stockcode-status')">
+            </label>
+            <button class="action-btn secondary" onclick="document.getElementById('vendor-data').value='';document.getElementById('stockcode-status').textContent=''">Clear</button>
+          </div>
+          <div id="stockcode-status" style="font-size:11px;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;min-height:16px;"></div>
+          <textarea id="vendor-data" placeholder="Paste stock codes here or upload a file above..." style="width:100%;height:180px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;resize:vertical;outline:none;line-height:1.6;"></textarea>
+        </div>
+        <div>
+          <div style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">QB Inventory Data (paste or upload)</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+            <label style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:12px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px;">
+              📂 Upload File
+              <input type="file" accept=".xlsx,.xls,.csv" style="position:absolute;opacity:0;width:1px;height:1px;" onchange="loadReconFile(this,'qb-data','qb-status')">
+            </label>
+            <button class="action-btn secondary" onclick="document.getElementById('qb-data').value='';document.getElementById('qb-status').textContent=''">Clear</button>
+          </div>
+          <div id="qb-status" style="font-size:11px;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;min-height:16px;"></div>
+          <textarea id="qb-data" placeholder="Paste QB inventory rows here or upload a file above..." style="width:100%;height:180px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;resize:vertical;outline:none;line-height:1.6;"></textarea>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button class="action-btn primary" onclick="runReconciliation()">⚖️ Compare Stock Code vs QB</button>
+        <button class="action-btn secondary" onclick="clearRecon()">Clear</button>
+        <button class="action-btn secondary" id="export-recon-btn" onclick="exportRecon()" style="display:none;">Export Results to Excel</button>
+      </div>
+
+      <div id="recon-results" style="display:none;margin-top:16px;">
+        <div class="result-summary" id="recon-summary"></div>
+        <div class="ai-analysis" id="recon-ai" style="display:none;">
+          <h4>Ultron Analysis</h4>
+          <div id="recon-ai-text"></div>
+        </div>
+        <div style="margin-top:16px;">
+          <div style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Reconciliation Results</div>
+          <div class="inv-table-wrap">
+            <table class="data-table" id="recon-table">
+              <thead><tr><th>Stock Code</th><th>Description</th><th>Stock Code Qty</th><th>QB Qty</th><th>Difference</th><th>Status</th></tr></thead>
+              <tbody id="recon-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CONFIRM -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>Start New Chat?</h3>
+    <p>This will clear your current conversation.</p>
+    <div class="confirm-btns">
+      <button class="confirm-btn cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-btn confirm" onclick="clearChat()">Clear Chat</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="modal-overlay" id="settings-modal" onclick="closeSettingsOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Settings</div>
+      <button class="modal-close" onclick="closeSettings()">×</button>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">AI Behavior</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Guided Mode</div><div class="setting-desc">Step-by-step walkthroughs instead of direct answers</div></div>
+        <label class="toggle"><input type="checkbox" id="guided-toggle" onchange="updateGuidedBadge()"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Response Length</div><div class="setting-desc">How detailed answers are</div></div>
+        <select class="setting-select" id="response-length"><option value="detailed">Detailed</option><option value="concise">Concise</option></select>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Industry</div><div class="setting-desc">Tailors advice to your QB edition</div></div>
+        <select class="setting-select" id="industry-select">
+          <option value="Precious Metals / Coin Dealer">Precious Metals / Coins</option>
+          <option value="Contractor">Contractor</option>
+          <option value="Manufacturing">Manufacturing</option>
+          <option value="Retail">Retail</option>
+          <option value="Professional Services">Professional Services</option>
+          <option value="Nonprofit">Nonprofit</option>
+        </select>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Appearance</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Theme</div></div>
+        <select class="setting-select" id="theme-select" onchange="applyTheme(this.value)"><option value="dark">Dark</option><option value="light">Light</option></select>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Font Size</div></div>
+        <div class="font-control">
+          <button class="font-btn" onclick="changeFontSize(-1)">−</button>
+          <span class="font-size-display" id="font-size-display">14px</span>
+          <button class="font-btn" onclick="changeFontSize(1)">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Keyboard Shortcuts</div>
+      <div class="setting-row"><div class="setting-label">Send message</div><span class="shortcut-hint">Enter</span></div>
+      <div class="setting-row"><div class="setting-label">Open settings</div><span class="shortcut-hint">Alt+S</span></div>
+      <div class="setting-row"><div class="setting-label">New chat</div><span class="shortcut-hint">Alt+N</span></div>
+      <div class="setting-row"><div class="setting-label">Focus input</div><span class="shortcut-hint">Alt+I</span></div>
+    </div>
+    <button class="save-btn" onclick="saveSettings()">Save Settings</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ───
+let conversationHistory = [];
+let isLoading = false;
+let fontSize = 14;
+let currentMode = 'sales_order';
+let uploadedData = null;
+let stockcodeData = [];
+let inventoryData = [];
+let settings = {guided_mode:false,response_length:'detailed',industry:'Precious Metals / Coin Dealer',theme:'dark',font_size:14};
+
+// ─── SETTINGS ───
+function loadSettings(){
+  const s=localStorage.getItem('ultron_settings');
+  if(s) settings={...settings,...JSON.parse(s)};
+  document.getElementById('guided-toggle').checked=settings.guided_mode;
+  document.getElementById('response-length').value=settings.response_length;
+  document.getElementById('industry-select').value=settings.industry;
+  document.getElementById('theme-select').value=settings.theme;
+  fontSize=settings.font_size||14;
+  applyTheme(settings.theme); applyFontSize(); updateGuidedBadge();
+}
+function saveSettings(){
+  settings.guided_mode=document.getElementById('guided-toggle').checked;
+  settings.response_length=document.getElementById('response-length').value;
+  settings.industry=document.getElementById('industry-select').value;
+  settings.theme=document.getElementById('theme-select').value;
+  settings.font_size=fontSize;
+  localStorage.setItem('ultron_settings',JSON.stringify(settings));
+  closeSettings(); updateGuidedBadge(); showToast('Settings saved');
+}
+function applyTheme(t){document.body.classList.toggle('light',t==='light');}
+function changeFontSize(d){fontSize=Math.min(20,Math.max(11,fontSize+d));applyFontSize();}
+function applyFontSize(){document.documentElement.style.setProperty('--font-size',fontSize+'px');document.getElementById('font-size-display').textContent=fontSize+'px';}
+function updateGuidedBadge(){document.getElementById('guided-badge').classList.toggle('visible',document.getElementById('guided-toggle').checked);}
+function openSettings(){document.getElementById('settings-modal').classList.add('open');}
+function closeSettings(){document.getElementById('settings-modal').classList.remove('open');}
+function closeSettingsOutside(e){if(e.target===document.getElementById('settings-modal'))closeSettings();}
+
+// ─── TABS ───
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  document.getElementById('sidebar').style.display = tab==='chat'?'flex':'none';
+}
+
+// ─── TOAST ───
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ─── CONFIRM / CLEAR ───
+function confirmClearChat(){document.getElementById('confirm-overlay').classList.add('open');}
+function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');}
+function clearChat(){
+  closeConfirm(); conversationHistory=[];
+  const m=document.getElementById('messages'); m.innerHTML='';
+  const w=document.createElement('div'); w.className='welcome'; w.id='welcome';
+  w.innerHTML=`<div class="welcome-icon">⚡</div><h2>Ultron</h2><p>Expert QuickBooks assistant for inventory-based businesses.</p><div class="welcome-chips"><button class="chip" onclick="sendQuick('Generate a journal entry for an inventory purchase')">Journal entry</button><button class="chip" onclick="switchTab('excel')">Excel → Sales Order</button><button class="chip" onclick="sendQuick('Check reorder alerts for low inventory')">Reorder alerts</button></div>`;
+  m.appendChild(w); showToast('Chat cleared');
+}
+
+// ─── CHAT ───
+function handleInput(el){
+  el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,140)+'px';
+  const len=el.value.length;
+  const c=document.getElementById('char-counter');
+  c.textContent=len>0?len+' chars':'';
+  c.className='char-counter'+(len>800?' warn':'');
+}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function handleScroll(){
+  const m=document.getElementById('messages');
+  const atBottom=m.scrollHeight-m.scrollTop-m.clientHeight<80;
+  document.getElementById('scroll-btn').classList.toggle('visible',!atBottom&&m.scrollHeight>m.clientHeight+100);
+}
+function scrollToBottom(){document.getElementById('messages').scrollTop=9999;}
+function sendQuick(text){
+  switchTab('chat');
+  const i=document.getElementById('user-input');
+  i.value=text; handleInput(i); i.focus();
+  i.setSelectionRange(text.length,text.length);
+}
+function copyMsg(btn,text){
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='Copied!'; btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied');},2000);
+  });
+}
+function formatMsg(text){
+  text=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  text=text.replace(/```[\w]*\n?([\s\S]*?)```/g,'<pre>$1</pre>');
+  text=text.replace(/`([^`]+)`/g,'<code>$1</code>');
+  text=text.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  text=text.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  text=text.replace(/^## (.+)$/gm,'<h3>$1</h3>');
+  text=text.replace(/(DEBIT:.*\nCREDIT:.*(?:\nMemo:.*)?)/g,'<div class="journal-entry">$1</div>');
+  text=text.replace(/^\* (.+)$/gm,'<li>$1</li>');
+  text=text.replace(/^- (.+)$/gm,'<li>$1</li>');
+  text=text.replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>');
+  text=text.replace(/(<li>[\s\S]*?<\/li>)/g,'<ul>$1</ul>');
+  return text.split(/\n\n+/).map(p=>{
+    if(p.startsWith('<pre>')||p.startsWith('<ul>')||p.startsWith('<h3>')||p.startsWith('<div class="journal')) return p;
+    return '<p>'+p.replace(/\n/g,'<br>')+'</p>';
+  }).join('');
+}
+function addMessage(role,content){
+  const w=document.getElementById('welcome'); if(w) w.remove();
+  const m=document.getElementById('messages');
+  const div=document.createElement('div'); div.className='message';
+  const av=role==='user'?'<div class="avatar user">You</div>':'<div class="avatar ai">U</div>';
+  const label=role==='user'?'You':'Ultron';
+  const actions=role==='assistant'?`<div class="message-actions"><button class="msg-btn" onclick="copyMsg(this,${JSON.stringify(content)})">Copy</button></div>`:'';
+  div.innerHTML=`${av}<div class="message-content"><div class="message-header"><div class="message-role">${label}</div>${actions}</div><div class="message-text">${role==='user'?'<p>'+content.replace(/\n/g,'<br>')+'</p>':formatMsg(content)}</div></div>`;
+  m.appendChild(div); m.scrollTop=m.scrollHeight;
+}
+function addTyping(){
+  const w=document.getElementById('welcome'); if(w) w.remove();
+  const m=document.getElementById('messages');
+  const div=document.createElement('div'); div.className='message'; div.id='typing-indicator';
+  div.innerHTML='<div class="avatar ai">U</div><div class="message-content"><div class="message-header"><div class="message-role">Ultron</div></div><div class="typing"><span></span><span></span><span></span></div></div>';
+  m.appendChild(div); m.scrollTop=m.scrollHeight;
+}
+function removeTyping(){const t=document.getElementById('typing-indicator');if(t)t.remove();}
+async function sendMessage(){
+  if(isLoading)return;
+  const input=document.getElementById('user-input');
+  const text=input.value.trim(); if(!text)return;
+  input.value=''; input.style.height='auto';
+  document.getElementById('char-counter').textContent='';
+  isLoading=true; document.getElementById('send-btn').disabled=true;
+  conversationHistory.push({role:'user',content:text});
+  addMessage('user',text); addTyping();
+  try{
+    const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:conversationHistory,guided_mode:settings.guided_mode,response_length:settings.response_length,industry:settings.industry})});
+    const d=await r.json(); removeTyping();
+    conversationHistory.push({role:'assistant',content:d.response});
+    addMessage('assistant',d.response);
+  }catch(e){removeTyping();addMessage('assistant','Something went wrong. Please try again.');}
+  isLoading=false; document.getElementById('send-btn').disabled=false; input.focus();
+}
+
+// ─── EXCEL UPLOAD ───
+function setMode(mode,btn){
+  currentMode=mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('excel-results').style.display='none';
+  uploadedData=null;
+  const labels={'sales_order':'📋 Drop your Sales Order Excel here','stockcode':'🏷️ Drop your Stock Code Excel here','inventory':'📦 Drop your Inventory Excel here','duplicates':'🔍 Drop any QB export Excel here'};
+  document.querySelector('.upload-zone h3').textContent=labels[mode];
+}
+function dragOver(e){e.preventDefault();document.getElementById('upload-zone').classList.add('drag');}
+function dragLeave(){document.getElementById('upload-zone').classList.remove('drag');}
+function dropFile(e){e.preventDefault();dragLeave();const f=e.dataTransfer.files[0];if(f)handleFile(f);}
+async function handleFile(file){
+  if(!file)return;
+  showToast('Reading '+file.name+'...');
+  const fd=new FormData();
+  fd.append('file',file);
+  fd.append('mode',currentMode);
+  try{
+    const r=await fetch('/upload-excel',{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.error){showToast('Error: '+d.error);return;}
+    uploadedData=d;
+    renderResults(d);
+    analyzeWithAI(d);
+  }catch(e){showToast('Upload failed. Try again.');}
+}
+function renderResults(d){
+  const box=document.getElementById('excel-results');
+  box.style.display='block';
+  const r=d.result;
+  const summary=document.getElementById('result-summary');
+
+  if(currentMode==='sales_order'){
+    summary.innerHTML=`
+      <div class="result-stat"><div class="result-stat-num">${d.total}</div><div class="result-stat-label">Total Rows</div></div>
+      <div class="result-stat"><div class="result-stat-num good">${r.valid_count}</div><div class="result-stat-label">Ready to Import</div></div>
+      <div class="result-stat"><div class="result-stat-num ${r.invalid_count>0?'bad':'good'}">${r.invalid_count}</div><div class="result-stat-label">Have Issues</div></div>`;
+    const bar=document.getElementById('action-bar');
+    bar.innerHTML=`<button class="action-btn primary" onclick="exportResults()">📥 Export Valid Orders</button><button class="action-btn secondary" onclick="sendToChat()">💬 Ask Ultron About Issues</button>`;
+    renderTable(['Row','Customer','Item','Description','Qty','Rate','Date','Status'],
+      r.orders.map(o=>({Row:o.row,Customer:o.customer,Item:o.item,Description:o.description,Qty:o.qty,Rate:o.rate,Date:o.date,Status:o.valid?'<span class="badge ok">Ready</span>':o.errors.map(e=>`<span class="badge error">${e}</span>`).join(' ')})));
+  }
+  else if(currentMode==='stockcode'){
+    stockcodeData=r.codes||[];
+    renderStockCodeCards(stockcodeData);
+    summary.innerHTML=`
+      <div class="result-stat"><div class="result-stat-num">${r.total}</div><div class="result-stat-label">Total Codes</div></div>
+      <div class="result-stat"><div class="result-stat-num ${r.duplicate_count>0?'warn':'good'}">${r.duplicate_count}</div><div class="result-stat-label">Duplicates</div></div>`;
+    document.getElementById('action-bar').innerHTML=`<button class="action-btn primary" onclick="switchTab('stockcode')">View in Stock Code Manager</button><button class="action-btn secondary" onclick="exportResults()">Export to Excel</button>`;
+    renderTable(['Row','Category','Code','Description','Type1','Type2'],r.codes.slice(0,100).map(c=>({Row:c.row,Category:c.category,Code:c.code,Description:c.description,Type1:c.type1,Type2:c.type2})));
+  }
+  else if(currentMode==='inventory'){
+    inventoryData=r.items||[];
+    renderInventoryTable(inventoryData);
+    summary.innerHTML=`
+      <div class="result-stat"><div class="result-stat-num">${r.total}</div><div class="result-stat-label">Total Items</div></div>
+      <div class="result-stat"><div class="result-stat-num ${r.low_stock_count>0?'warn':'good'}">${r.low_stock_count}</div><div class="result-stat-label">Low Stock</div></div>`;
+    document.getElementById('action-bar').innerHTML=`<button class="action-btn primary" onclick="switchTab('inventory')">View Dashboard</button><button class="action-btn secondary" onclick="exportResults()">Export to Excel</button>`;
+    renderTable(['Item','Description','Qty','Reorder','Location','Status'],
+      r.items.map(i=>({Item:i.item,Description:i.description,Qty:i.qty,Reorder:i.reorder,Location:i.location,Status:i.low_stock?'<span class="badge warn">Low Stock</span>':'<span class="badge ok">OK</span>'})));
+  }
+  else if(currentMode==='duplicates'){
+    summary.innerHTML=`
+      <div class="result-stat"><div class="result-stat-num">${d.total}</div><div class="result-stat-label">Total Rows</div></div>
+      <div class="result-stat"><div class="result-stat-num ${r.duplicate_count>0?'bad':'good'}">${r.duplicate_count}</div><div class="result-stat-label">Duplicates Found</div></div>`;
+    document.getElementById('action-bar').innerHTML=`<button class="action-btn secondary" onclick="sendToChat()">💬 Ask Ultron to Analyze</button><button class="action-btn secondary" onclick="exportResults()">Export Duplicates</button>`;
+    if(r.duplicates.length>0){
+      renderDuplicateResults(r.duplicates);
+      renderTable(['Duplicate Row','Matches Row','Key'],r.duplicates.map(d=>({'Duplicate Row':d.row,'Matches Row':d.matches_row,Key:d.key})));
+    } else {
+      document.getElementById('result-tbody').innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--green);padding:20px;">No duplicates found ✓</td></tr>';
+    }
+  }
+}
+function renderTable(cols,rows){
+  const thead=document.getElementById('result-thead');
+  const tbody=document.getElementById('result-tbody');
+  thead.innerHTML='<tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
+  tbody.innerHTML=rows.slice(0,200).map(row=>'<tr>'+cols.map(c=>`<td>${row[c]||''}</td>`).join('')+'</tr>').join('');
+}
+async function analyzeWithAI(d){
+  try{
+    const r=await fetch('/analyze-upload',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({parsed:d.result,mode:currentMode,guided_mode:settings.guided_mode})});
+    const data=await r.json();
+    const box=document.getElementById('ai-analysis');
+    document.getElementById('ai-analysis-text').innerHTML=formatMsg(data.analysis);
+    box.style.display='block';
+  }catch(e){}
+}
+function sendToChat(){
+  const summary=uploadedData?`I uploaded a ${currentMode} Excel file. ${uploadedData.result.summary}. Here are the issues: ${JSON.stringify(uploadedData.result).slice(0,1500)}`:'';
+  if(summary){switchTab('chat');sendQuick(summary);}
+}
+function exportResults(){
+  if(!uploadedData)return;
+  const r=uploadedData.result;
+  let rows=[], cols=[];
+  if(currentMode==='sales_order'){cols=['Row','Customer','Item','Description','Qty','Rate','Date','Valid'];rows=r.orders.map(o=>({Row:o.row,Customer:o.customer,Item:o.item,Description:o.description,Qty:o.qty,Rate:o.rate,Date:o.date,Valid:o.valid?'Yes':'No - '+o.errors.join(', ')}));}
+  else if(currentMode==='stockcode'){cols=['Category','Code','Description','Type1','Type2'];rows=r.codes;}
+  else if(currentMode==='inventory'){cols=['Item','Description','Qty','Reorder','Location'];rows=r.items;}
+  else{cols=['Row','Matches Row','Key'];rows=r.duplicates;}
+  downloadExcel(cols,rows,currentMode+'_export');
+}
+function exportStockCode(){
+  if(!stockcodeData.length){showToast('No Stock Code data loaded. Upload a file first.');return;}
+  downloadExcel(['Category','Code','Description','Type1','Type2'],stockcodeData,'stockcode_codes');
+}
+function exportInventory(){
+  if(!inventoryData.length){showToast('No inventory data loaded.');return;}
+  downloadExcel(['Item','Description','Qty','Reorder','Location'],inventoryData,'inventory_export');
+}
+async function downloadExcel(columns,rows,filename){
+  const r=await fetch('/export-excel',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({columns,rows,filename,title:filename})});
+  const blob=await r.blob();
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename+'.xlsx'; a.click();
+  URL.revokeObjectURL(url); showToast('Downloaded '+filename+'.xlsx');
+}
+
+// ─── Stock Code ───
+function renderStockCodeCards(codes){
+  const grid=document.getElementById('stockcode-grid');
+  if(!codes.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text3);padding:40px;">No codes loaded</div>';return;}
+  grid.innerHTML=codes.slice(0,200).map(c=>`
+    <div class="stockcode-card">
+      <div class="stockcode-code">${c.code||'—'}</div>
+      <div class="stockcode-desc">${c.description||'No description'}</div>
+      <div class="stockcode-meta">
+        ${c.category?`<span class="badge info">${c.category}</span>`:''}
+        ${c.type1?`<span class="badge ok">${c.type1}</span>`:''}
+        ${c.type2&&c.type2!==c.type1?`<span class="badge ok">${c.type2}</span>`:''}
+      </div>
+    </div>`).join('');
+}
+function searchStockCode(q){
+  if(!stockcodeData.length)return;
+  const filtered=stockcodeData.filter(c=>
+    (c.code||'').toLowerCase().includes(q.toLowerCase())||
+    (c.description||'').toLowerCase().includes(q.toLowerCase())||
+    (c.category||'').toLowerCase().includes(q.toLowerCase()));
+  renderStockCodeCards(filtered);
+}
+
+// ─── INVENTORY ───
+function renderInventoryTable(items){
+  const tbody=document.getElementById('inv-tbody');
+  if(!items.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:40px;">No inventory data</td></tr>';return;}
+  tbody.innerHTML=items.map(i=>`<tr class="${i.low_stock?'low-row':''}">
+    <td><code>${i.item||'—'}</code></td>
+    <td>${i.description||'—'}</td>
+    <td>${i.qty||'—'}</td>
+    <td>${i.reorder||'—'}</td>
+    <td>${i.location||'—'}</td>
+    <td>${i.low_stock?'<span class="badge warn">⚠️ Low</span>':'<span class="badge ok">OK</span>'}</td>
+  </tr>`).join('');
+  document.getElementById('export-inv-btn').disabled=false;
+}
+function filterInv(filter,btn){
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(!inventoryData.length)return;
+  let filtered=inventoryData;
+  if(filter==='low') filtered=inventoryData.filter(i=>i.low_stock);
+  else if(filter!=='all') filtered=inventoryData.filter(i=>(i.category||i.item||'').toUpperCase().includes(filter.toUpperCase()));
+  renderInventoryTable(filtered);
+}
+
+// ─── DUPLICATES ───
+function renderDuplicateResults(dups){
+  const box=document.getElementById('dup-results');
+  if(!dups.length){box.innerHTML='<div style="text-align:center;color:var(--green);padding:40px;">No duplicates found ✓</div>';return;}
+}
+
+// ─── KEYBOARD SHORTCUTS ───
+document.addEventListener('keydown',e=>{
+  if(e.altKey&&e.key==='s'){e.preventDefault();openSettings();}
+  if(e.altKey&&e.key==='n'){e.preventDefault();confirmClearChat();}
+  if(e.altKey&&e.key==='i'){e.preventDefault();switchTab('chat');document.getElementById('user-input').focus();}
+  if(e.key==='Escape'){closeSettings();closeConfirm();}
+});
+
+
+  let reconResults = [];
+
+  async function loadReconFile(input, tid, sid) {
+    const file = input.files[0];
+    if (!file) return;
+    showToast('Reading ' + file.name + '...');
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const r = await fetch('/read-file-raw', {method:'POST',body:fd});
+      const d = await r.json();
+      if (d.error) { showToast('Error: ' + d.error); return; }
+      document.getElementById(tid).value = d.text;
+      document.getElementById(sid).textContent = file.name + ' - ' + d.rows + ' rows loaded';
+      input.value = '';
+      showToast('Loaded ' + d.rows + ' rows');
+    } catch(e) { showToast('Failed to read file'); }
+  }
+
+  function parseVendorData(raw) {
+    const skip = (window.CATEGORIES && window.CATEGORIES.length ? window.CATEGORIES : ['GOLD','SILVER','PLATINUM','PALLADIUM','NUMISMATIC','FABRICATION']).concat('MISC');
+    const lines = raw.trim().split('\n').filter(l => l.trim());
+    const items = {};
+    for (const line of lines) {
+      const parts = line.split(/\t|  +/).map(p => p.trim()).filter(p => p);
+      let code = null, qty = null, desc = null;
+      for (let i = 0; i < parts.length; i++) {
+        if (/^[A-Z][A-Z0-9]+$/.test(parts[i]) && parts[i].length >= 2 && !skip.includes(parts[i])) {
+          code = parts[i];
+          if (i+1 < parts.length && isNaN(parseFloat(parts[i+1]))) desc = parts[i+1];
+          for (let j = i+1; j < parts.length; j++) {
+            const n = parseFloat(parts[j]);
+            if (!isNaN(n)) { qty = n; break; }
+          }
+          break;
+        }
+      }
+      if (code) {
+        if (!items[code]) items[code] = {code, desc: desc||'', qty: qty||0};
+        else items[code].qty += (qty||0);
+      }
+    }
+    return items;
+  }
+
+  function parseQBData(raw) {
+    const lines = raw.trim().split('\n');
+    const items = {};
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const lower = line.toLowerCase();
+      if (lower.includes('parent account') || lower.includes('do not use')) continue;
+      if (/^\s*total\s/i.test(line)) continue;
+      if (/^\s*inventory\s*$/i.test(line.trim())) continue;
+      const tabParts = line.split('\t').map(p => p.trim()).filter(p => p);
+      if (tabParts.length === 0) continue;
+      const firstPart = tabParts[0];
+      const cm = firstPart.match(/^([A-Z][A-Z0-9\/\.]{1,25})\s+\(([^)]+)\)/);
+      if (cm) {
+        const code = cm[1].trim(), desc = cm[2].trim();
+        for (let j = 1; j < tabParts.length; j++) {
+          const n = parseFloat(tabParts[j].replace(/,/g, ''));
+          if (!isNaN(n) && n >= 0) {
+            if (!items[code]) items[code] = {code, desc, qty: n};
+            else items[code].qty += n;
+            break;
+          }
+        }
+        continue;
+      }
+      const anyCode = line.match(/([A-Z][A-Z0-9\/\.]{1,25})\s+\(([^)]+)\)/);
+      if (anyCode) {
+        const code = anyCode[1].trim(), desc = anyCode[2].trim();
+        const afterCode = line.slice(line.indexOf(anyCode[0]) + anyCode[0].length);
+        const nums = afterCode.match(/([\d,]+\.?\d*)/g);
+        if (nums && nums.length > 0) {
+          const qty = parseFloat(nums[0].replace(/,/g,''));
+          if (!isNaN(qty) && qty >= 0) {
+            if (!items[code]) items[code] = {code, desc, qty};
+            else items[code].qty += qty;
+          }
+        }
+      }
+    }
+    return items;
+  }
+
+  async function runReconciliation() {
+    const vRaw = document.getElementById('vendor-data').value.trim();
+    const qRaw = document.getElementById('qb-data').value.trim();
+    if (!vRaw || !qRaw) { showToast('Paste or upload both sides first'); return; }
+    showToast('Running reconciliation...');
+    const vendor = parseVendorData(vRaw);
+    const qb = parseQBData(qRaw);
+    const allCodes = new Set([...Object.keys(vendor), ...Object.keys(qb)]);
+    reconResults = [];
+    for (const code of allCodes) {
+      const v = vendor[code], q = qb[code];
+      const vQty = v ? v.qty : null, qQty = q ? q.qty : null;
+      const desc = (v && v.desc) || (q && q.desc) || '';
+      let diff = null, status = '';
+      if (vQty !== null && qQty !== null) {
+        diff = vQty - qQty;
+        status = Math.abs(diff) < 0.01 ? 'match' : (diff > 0 ? 'over' : 'under');
+      } else if (vQty !== null) { status = 'missing_qb'; }
+      else { status = 'missing_vendor'; }
+      reconResults.push({code, desc, vQty, qQty, diff, status});
+    }
+    const ord = {over:0, under:0, missing_qb:1, missing_vendor:2, match:3};
+    reconResults.sort((a,b) => ord[a.status] - ord[b.status]);
+    const mt = reconResults.filter(r => r.status==='match').length;
+    const er = reconResults.filter(r => r.status==='over'||r.status==='under').length;
+    const mq = reconResults.filter(r => r.status==='missing_qb').length;
+    const mv = reconResults.filter(r => r.status==='missing_vendor').length;
+    document.getElementById('recon-summary').innerHTML =
+      '<div class="result-stat"><div class="result-stat-num">'+reconResults.length+'</div><div class="result-stat-label">Total</div></div>'+
+      '<div class="result-stat"><div class="result-stat-num good">'+mt+'</div><div class="result-stat-label">Match</div></div>'+
+      '<div class="result-stat"><div class="result-stat-num bad">'+er+'</div><div class="result-stat-label">Mismatch</div></div>'+
+      '<div class="result-stat"><div class="result-stat-num warn">'+mq+'</div><div class="result-stat-label">Missing QB</div></div>'+
+      '<div class="result-stat"><div class="result-stat-num warn">'+mv+'</div><div class="result-stat-label">Missing Stock Code</div></div>';
+    document.getElementById('recon-tbody').innerHTML = reconResults.map(r => {
+      const vQ = r.vQty !== null ? r.vQty : '-';
+      const qQ = r.qQty !== null ? r.qQty : '-';
+      const df = r.diff !== null ? (r.diff > 0 ? '+'+r.diff.toFixed(2) : r.diff.toFixed(2)) : '-';
+      let b = '';
+      if (r.status==='match') b = '<span class="badge ok">Match</span>';
+      else if (r.status==='over') b = '<span class="badge error">Over '+Math.abs(r.diff).toFixed(2)+'</span>';
+      else if (r.status==='under') b = '<span class="badge error">Under '+Math.abs(r.diff).toFixed(2)+'</span>';
+      else if (r.status==='missing_qb') b = '<span class="badge warn">Missing QB</span>';
+      else b = '<span class="badge info">Missing Stock Code</span>';
+      return '<tr class="'+(r.status!=='match'?'low-row':'')+'">'+
+        '<td><code>'+r.code+'</code></td><td>'+r.desc+'</td>'+
+        '<td>'+vQ+'</td><td>'+qQ+'</td><td>'+df+'</td><td>'+b+'</td></tr>';
+    }).join('');
+    document.getElementById('recon-results').style.display = 'block';
+    document.getElementById('export-recon-btn').style.display = 'inline-flex';
+    showToast('Done - ' + reconResults.length + ' codes compared');
+  }
+
+  function clearRecon() {
+    document.getElementById('vendor-data').value = '';
+    document.getElementById('qb-data').value = '';
+    document.getElementById('stockcode-status').textContent = '';
+    document.getElementById('qb-status').textContent = '';
+    document.getElementById('recon-results').style.display = 'none';
+    reconResults = [];
+  }
+
+  function exportRecon() {
+    if (!reconResults.length) return;
+    downloadExcel(
+      ['Stock Code','Description','Stock Code Qty','QB Qty','Difference','Status'],
+      reconResults.map(r => ({
+        'Stock Code': r.code, 'Description': r.desc,
+        'Stock Code Qty': r.vQty !== null ? r.vQty : '',
+        'QB Qty': r.qQty !== null ? r.qQty : '',
+        'Difference': r.diff !== null ? r.diff : '',
+        'Status': r.status
+      })),
+      'stockcode_reconciliation'
+    );
+  }
+
+loadSettings();
+
+// ─── load business context from config ───
+(async function loadBusinessConfig(){
+  try{
+    const cfg = await (await fetch('/config')).json();
+    if(cfg.industry){ const h=document.getElementById('header-sub'); if(h) h.textContent = cfg.industry; }
+    window.CATEGORIES = Array.isArray(cfg.inventory_categories) ? cfg.inventory_categories.map(c=>String(c).toUpperCase()) : [];
+    const box = document.getElementById('inv-cat-filters');
+    if(box && Array.isArray(cfg.inventory_categories)){
+      box.innerHTML = cfg.inventory_categories.map(c=>{
+        const label = String(c).replace(/_/g,' ').replace(/\b\w/g, m=>m.toUpperCase());
+        return `<button class="filter-btn" onclick="filterInv('${String(c).replace(/'/g,"")}',this)">${label}</button>`;
+      }).join('');
+    }
+  }catch(e){ /* config optional; UI still works */ }
+})();
+</script>
+</body>
+</html>
