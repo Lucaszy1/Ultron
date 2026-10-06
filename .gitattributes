@@ -1,0 +1,4 @@
+# Keep GitHub's language stats focused on the backend.
+# The single-page UI template is large, so mark HTML as non-detectable.
+*.html linguist-detectable=false
+templates/* linguist-vendored=true
