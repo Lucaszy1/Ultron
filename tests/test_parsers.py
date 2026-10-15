@@ -65,3 +65,17 @@ def test_find_duplicates_on_name_amount_date():
 def test_empty_input_is_safe():
     assert parse_sales_order([], [])["valid_count"] == 0
     assert parse_inventory([], [])["total"] == 0
+
+
+def test_app_token_guard(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    import app as ultron_app
+    monkeypatch.setattr(ultron_app, "APP_TOKEN", "s3cret")
+    client = ultron_app.app.test_client()
+    assert client.post("/chat", json={}).status_code == 401
+    assert client.post("/chat", json={}, headers={"X-App-Token": "nope"}).status_code == 401
+    # right token gets past the guard (an export needs no API call)
+    ok = client.post("/export-excel", json={"columns": ["a"], "rows": [{"a": 1}]},
+                     headers={"X-App-Token": "s3cret"})
+    assert ok.status_code == 200
+    assert client.get("/config").status_code == 200  # GETs stay open

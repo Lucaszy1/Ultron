@@ -71,7 +71,8 @@ No business details are hardcoded, so your real config never has to be committed
 - Set `FLASK_DEBUG=0` (the default). Never run with the debugger on a reachable host.
 - Set `ULTRON_APP_TOKEN` to require an `X-App-Token` header on POST requests. Without
   it, anyone who can reach the server can send chat requests and spend your API
-  credits. Uploads are capped at 10 MB.
+  credits. In the UI, enter the same value under Settings > App Token; it is kept
+  in the browser's sessionStorage and sent on every POST. Uploads are capped at 10 MB.
 - The app binds to `127.0.0.1` by default. Only change `HOST` behind your own auth.
 
 ## Testing

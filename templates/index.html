@@ -532,6 +532,13 @@ input:checked+.toggle-slider:before{transform:translateX(17px);}
       </div>
     </div>
     <div class="settings-section">
+      <div class="settings-section-title">Security</div>
+      <div class="setting-row">
+        <div><div class="setting-label">App Token</div><div class="setting-desc">Only needed if the server sets ULTRON_APP_TOKEN</div></div>
+        <input type="password" class="setting-select" id="app-token" autocomplete="off" placeholder="not set">
+      </div>
+    </div>
+    <div class="settings-section">
       <div class="settings-section-title">Appearance</div>
       <div class="setting-row">
         <div><div class="setting-label">Theme</div></div>
@@ -570,6 +577,23 @@ let stockcodeData = [];
 let inventoryData = [];
 let settings = {guided_mode:false,response_length:'detailed',industry:'Precious Metals / Coin Dealer',theme:'dark',font_size:14};
 
+// ─── AUTH ───
+// If the server sets ULTRON_APP_TOKEN, every POST must carry it as X-App-Token.
+// The token is entered in Settings and kept in this browser's sessionStorage only.
+function getAppToken(){try{return sessionStorage.getItem('ultron_app_token')||'';}catch(e){return '';}}
+function setAppToken(t){try{t?sessionStorage.setItem('ultron_app_token',t):sessionStorage.removeItem('ultron_app_token');}catch(e){}}
+const _fetch=window.fetch.bind(window);
+window.fetch=async function(url,opts={}){
+  const method=(opts.method||'GET').toUpperCase();
+  if(method==='POST'){
+    const token=getAppToken();
+    if(token){opts={...opts,headers:{...(opts.headers||{}),'X-App-Token':token}};}
+  }
+  const r=await _fetch(url,opts);
+  if(r.status===401&&method==='POST'){showToast('Unauthorized: set the App Token in Settings (Alt+S)');}
+  return r;
+};
+
 // ─── SETTINGS ───
 function loadSettings(){
   const s=localStorage.getItem('ultron_settings');
@@ -578,6 +602,7 @@ function loadSettings(){
   document.getElementById('response-length').value=settings.response_length;
   document.getElementById('industry-select').value=settings.industry;
   document.getElementById('theme-select').value=settings.theme;
+  document.getElementById('app-token').value=getAppToken();
   fontSize=settings.font_size||14;
   applyTheme(settings.theme); applyFontSize(); updateGuidedBadge();
 }
@@ -587,6 +612,7 @@ function saveSettings(){
   settings.industry=document.getElementById('industry-select').value;
   settings.theme=document.getElementById('theme-select').value;
   settings.font_size=fontSize;
+  setAppToken(document.getElementById('app-token').value.trim());
   localStorage.setItem('ultron_settings',JSON.stringify(settings));
   closeSettings(); updateGuidedBadge(); showToast('Settings saved');
 }
